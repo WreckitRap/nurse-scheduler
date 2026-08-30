@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\NurseController;
+use App\Models\Unit;
+use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\Admin\NurseController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -16,7 +18,28 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    $is_admin = request()->user()->role === 'nurse_admin';
+
+    return Inertia::render('Dashboard', [
+        'stats' => [
+            'total_nurses' => User::where('role', 'nurse_staff')->count(),
+            'active_nurses' => User::where('role', 'nurse_staff')
+                ->whereHas('nurseProfile', fn ($q) => $q->where('is_active', true))
+                ->count(),
+            'units' => Unit::count(),
+            'pending_requests' => 0,
+        ],
+        'nurses' => $is_admin
+            ? User::where('role', 'nurse_staff')->with('nurseProfile.unit')->latest()->take(5)->get()
+            : null,
+
+        'units_list' => $is_admin
+            ? Unit::orderBy('name')->withCount([
+                'nurseProfiles as total_count',
+                'nurseProfiles as active_count' => fn ($q) => $q->where('is_active', true),
+            ])->get()
+            : null,
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

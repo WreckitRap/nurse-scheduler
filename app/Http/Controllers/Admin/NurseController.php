@@ -18,10 +18,8 @@ class NurseController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Nurses/Index', [
-            'nurses' => User::where('role', 'nurse_staff')
-                ->with('nurseProfile.unit')
-                ->latest()
-                ->get(),
+            'nurses' => User::where('role', 'nurse_staff')->with('nurseProfile.unit')->latest()->get(),
+            'units' => Unit::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
