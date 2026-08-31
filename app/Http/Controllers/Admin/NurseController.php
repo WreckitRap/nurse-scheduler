@@ -7,9 +7,7 @@ use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -34,38 +32,37 @@ class NurseController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
-            'employee_no' => ['required', 'string', 'max:50', 'unique:nurse_profiles'],
-            'unit_id' => ['nullable', 'exists:units,id'],
+            'role' => ['required', 'in:nurse_admin,nurse_staff'],
+            'employee_no' => ['required', 'string', 'max:50'],
+            'unit_id' => ['required', 'exists:units,id'],
             'specialization' => ['nullable', 'string', 'max:255'],
-            'employment_type' => ['required', 'in:full_time,part_time,agency'],
+            'employment_type' => ['required', 'in:full_time,part_time,per_diem'],
             'max_weekly_hours' => ['required', 'integer', 'min:1', 'max:80'],
         ]);
 
-        DB::transaction(function () use ($data) {
-            $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Hash::make($data['password']),
-                'role' => 'nurse_staff',
-            ]);
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'role' => $data['role'],
+        ]);
 
-            $user->nurseProfile()->create([
-                'employee_no' => $data['employee_no'],
-                'unit_id' => $data['unit_id'] ?? null,
-                'specialization' => $data['specialization'] ?? null,
-                'employment_type' => $data['employment_type'],
-                'max_weekly_hours' => $data['max_weekly_hours'],
-            ]);
-        });
+        $user->nurseProfile()->create([
+            'employee_no' => $data['employee_no'],
+            'unit_id' => $data['unit_id'],
+            'specialization' => $data['specialization'] ?? null,
+            'employment_type' => $data['employment_type'],
+            'max_weekly_hours' => $data['max_weekly_hours'],
+            'is_active' => true,
+        ]);
 
-        return redirect()->route('admin.nurses.index')->with('success', 'Nurse staff account created.');
+        return redirect()->route('admin.nurses.index')->with('success', 'Nurse staff created.');
     }
 
     public function edit(User $nurse): Response
     {
-        abort_if($nurse->isAdmin(), 404);
         $nurse->load('nurseProfile');
 
         return Inertia::render('Admin/Nurses/Edit', [
@@ -76,40 +73,48 @@ class NurseController extends Controller
 
     public function update(Request $request, User $nurse): RedirectResponse
     {
-        abort_if($nurse->isAdmin(), 404);
-
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($nurse->id)],
-            'employee_no' => ['required', 'string', 'max:50', Rule::unique('nurse_profiles', 'employee_no')->ignore($nurse->nurseProfile?->id)],
-            'unit_id' => ['nullable', 'exists:units,id'],
+            'email' => ['required', 'email', 'unique:users,email,' . $nurse->id],
+            'password' => ['nullable', 'string', 'min:8'],
+            'role' => ['required', 'in:nurse_admin,nurse_staff'],
+            'employee_no' => ['required', 'string', 'max:50'],
+            'unit_id' => ['required', 'exists:units,id'],
             'specialization' => ['nullable', 'string', 'max:255'],
-            'employment_type' => ['required', 'in:full_time,part_time,agency'],
+            'employment_type' => ['required', 'in:full_time,part_time,per_diem'],
             'max_weekly_hours' => ['required', 'integer', 'min:1', 'max:80'],
         ]);
 
-        $nurse->update(['name' => $data['name'], 'email' => $data['email']]);
+        $nurse->update([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'role' => $data['role'],
+            ...($data['password'] ? ['password' => Hash::make($data['password'])] : []),
+        ]);
 
-        $nurse->nurseProfile?->update([
+        $nurse->nurseProfile()->updateOrCreate([], [
             'employee_no' => $data['employee_no'],
-            'unit_id' => $data['unit_id'] ?? null,
+            'unit_id' => $data['unit_id'],
             'specialization' => $data['specialization'] ?? null,
             'employment_type' => $data['employment_type'],
             'max_weekly_hours' => $data['max_weekly_hours'],
         ]);
 
-        return redirect()->route('admin.nurses.index')->with('success', 'Nurse updated.');
+        return redirect()->route('admin.nurses.index')->with('success', 'Nurse staff updated.');
     }
 
     public function toggle(User $nurse): RedirectResponse
     {
-        abort_if($nurse->isAdmin(), 404);
-
-        $profile = $nurse->nurseProfile;
-        abort_if(! $profile, 404);
-
-        $profile->update(['is_active' => ! $profile->is_active]);
+        $nurse->nurseProfile()->update(['is_active' => ! $nurse->nurseProfile->is_active]);
 
         return back()->with('success', 'Nurse status updated.');
+    }
+
+    public function destroy(User $nurse): RedirectResponse
+    {
+        $nurse->nurseProfile()?->delete();
+        $nurse->delete();
+
+        return back()->with('success', 'Nurse staff deleted.');
     }
 }

@@ -42,7 +42,7 @@ function EmptyState({ icon: Icon, accent, title, text }) {
     );
 }
 
-export default function Dashboard({ stats, nurses, units_list }) {
+export default function Dashboard({ stats, nurses, units_list, coverage }) {
     const user = usePage().props.auth.user;
     const isAdmin = user.role === 'nurse_admin';
 
@@ -114,13 +114,46 @@ export default function Dashboard({ stats, nurses, units_list }) {
                             </Card>
                         </div>
 
-                        <Card title="Coverage Snapshot">
-                            <EmptyState
-                                icon={CalendarDays}
-                                accent="bg-indigo-50 text-indigo-600"
-                                title="Schedule module coming next"
-                                text="Live shift coverage, gaps and today's assignments will appear here once scheduling is live."
-                            />
+                       <Card title="Coverage Snapshot">
+                            {coverage ? (
+                                <div>
+                                    <div className="mb-4 flex items-center justify-between gap-2 rounded-xl bg-indigo-50 px-3 py-2">
+                                        <span className="truncate text-xs font-medium text-indigo-700">{coverage.schedule_name}</span>
+                                        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-indigo-700">
+                                            {coverage.open_slots} open
+                                        </span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {coverage.days.map((d) => {
+                                            const pct = d.required ? Math.min(100, Math.round((d.assigned / d.required) * 100)) : 100;
+                                            const bar = pct >= 100 ? 'bg-green-500' : pct >= 70 ? 'bg-amber-500' : 'bg-red-500';
+                                            return (
+                                                <div key={d.date}>
+                                                    <div className="mb-1 flex items-center justify-between text-xs">
+                                                        <span className="font-medium text-gray-700">
+                                                            {new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                                        </span>
+                                                        <span className="text-gray-500">{d.assigned}/{d.required} filled</span>
+                                                    </div>
+                                                    <div className="h-2 rounded-full bg-gray-100">
+                                                        <div className={'h-2 rounded-full ' + bar} style={{ width: pct + '%' }} />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {coverage.days.length === 0 && (
+                                            <p className="py-6 text-center text-xs text-gray-500">No upcoming shifts in this schedule.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <EmptyState
+                                    icon={CalendarDays}
+                                    accent="bg-indigo-50 text-indigo-600"
+                                    title="No schedule yet"
+                                    text="Create a schedule to see live coverage gaps here."
+                                />
+                            )}
                         </Card>
                     </div>
 

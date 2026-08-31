@@ -25,7 +25,7 @@ export default function AuthenticatedLayout({ header, children }) {
             section: 'Main',
             items: [
                 { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: route().current('dashboard') },
-                { name: 'Schedule', href: null, icon: CalendarDays, soon: true },
+                { name: 'Schedule', href: isAdmin ? route('admin.schedules.index') : null, icon: CalendarDays, current: route().current('admin.schedules.*') },
                 { name: 'Time Off', href: null, icon: Clock, soon: true },
             ],
         },
@@ -34,8 +34,8 @@ export default function AuthenticatedLayout({ header, children }) {
                 section: 'Management',
                 items: [
                     { name: 'Nurse Staff', href: route('admin.nurses.index'), icon: Users, current: route().current('admin.nurses.*') },
-                    { name: 'Shift Templates', href: null, icon: CalendarRange, soon: true },
-                    { name: 'Units', href: null, icon: Building2, soon: true },
+                    { name: 'Shift Templates', href: route('admin.shift-templates.index'), icon: CalendarRange, current: route().current('admin.shift-templates.*') },
+                    { name: 'Units', href: route('admin.units.index'), icon: Building2, current: route().current('admin.units.*') },
                 ],
             }]
             : []),

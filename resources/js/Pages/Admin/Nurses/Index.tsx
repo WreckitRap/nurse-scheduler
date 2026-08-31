@@ -1,4 +1,15 @@
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/Components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowUpDown,
@@ -10,6 +21,7 @@ import {
     Pencil,
     Plus,
     Search,
+    Trash2,
     UserCheck,
     Users,
     UserX,
@@ -52,6 +64,7 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
     const [page, setPage] = useState(1);
     const [menuOpen, setMenuOpen] = useState<number | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<Nurse | null>(null);
 
     const filtered = useMemo(() => {
         let list = [...nurses];
@@ -85,8 +98,8 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                         : (a.nurse_profile?.unit?.name ?? '');
                 const bv =
                     sortKey === 'name'
-                        ? b.name
-                        : sortKey === 'employee_no'
+                    ? b.name
+                    : sortKey === 'employee_no'
                         ? (b.nurse_profile?.employee_no ?? '')
                         : (b.nurse_profile?.unit?.name ?? '');
                 return av.localeCompare(bv) * (sortDir === 'asc' ? 1 : -1);
@@ -149,6 +162,15 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                             {n.nurse_profile?.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                             {n.nurse_profile?.is_active ? 'Deactivate' : 'Activate'}
                         </button>
+                        <button
+                            onClick={() => {
+                                setMenuOpen(null);
+                                setDeleteTarget(n);
+                            }}
+                            className="flex w-full items-center gap-2 border-t border-gray-100 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                        >
+                            <Trash2 className="h-4 w-4" /> Delete
+                        </button>
                     </div>
                 </>
             )}
@@ -185,25 +207,35 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                                 className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             />
                         </div>
-                        <select
-                            value={unitFilter}
-                            onChange={(e) => { setUnitFilter(e.target.value); setPage(1); }}
-                            className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-600 focus:border-indigo-500 focus:outline-none"
+
+                        <Select
+                            value={unitFilter || 'all'}
+                            onValueChange={(v) => { setUnitFilter(v === 'all' ? '' : v); setPage(1); }}
                         >
-                            <option value="">All Units</option>
-                            {units.map((u) => (
-                                <option key={u.id} value={u.id}>{u.name}</option>
-                            ))}
-                        </select>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-sm text-gray-600 focus:border-indigo-500 focus:outline-none sm:w-40"
+                            <SelectTrigger className="w-full sm:w-44">
+                                <SelectValue placeholder="All Units" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Units</SelectItem>
+                                {units.map((u) => (
+                                    <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select
+                            value={statusFilter || 'all'}
+                            onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v); setPage(1); }}
                         >
-                            <option value="">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
+                            <SelectTrigger className="w-full sm:w-40">
+                                <SelectValue placeholder="All Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <Link
@@ -347,6 +379,24 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                     </div>
                 </div>
             </div>
+
+            {/* Delete confirmation dialog */}
+            <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove this nurse's account and profile. Are you sure you want to do this action?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => router.delete(route('admin.nurses.destroy', deleteTarget!.id))}>
+                            Yes, delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AuthenticatedLayout>
     );
 }
