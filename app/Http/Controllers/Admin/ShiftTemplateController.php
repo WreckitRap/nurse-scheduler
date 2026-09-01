@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ShiftTemplate;
 use App\Models\Unit;
+use App\Models\Shift;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,6 +31,19 @@ class ShiftTemplateController extends Controller
     public function update(Request $request, ShiftTemplate $shiftTemplate): RedirectResponse
     {
         $shiftTemplate->update($request->validate($this->rules()));
+
+        // Propagate changes to shifts in DRAFT schedules only
+        Shift::where('shift_template_id', $shiftTemplate->id)
+            ->whereHas('schedule', fn ($q) => $q->where('status', 'draft'))
+            ->update(array_merge(
+                [
+                    'start_time' => $shiftTemplate->start_time,
+                    'end_time' => $shiftTemplate->end_time,
+                    'required_nurses' => $shiftTemplate->required_nurses,
+                    'color' => $shiftTemplate->color,
+                ],
+                $shiftTemplate->unit_id ? ['unit_id' => $shiftTemplate->unit_id] : [],
+            ));
 
         return back()->with('success', 'Shift template updated.');
     }

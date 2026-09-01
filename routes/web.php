@@ -5,6 +5,9 @@ use App\Http\Controllers\Admin\NurseController;
 use App\Http\Controllers\Admin\ShiftTemplateController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\ScheduleController;
+use App\Http\Controllers\Admin\TimeOffController as AdminTimeOffController;
+use App\Http\Controllers\TimeOffController;
+use App\Models\TimeOffRequest;
 use App\Models\Unit;
 use App\Models\Schedule;
 use App\Models\User;
@@ -13,65 +16,79 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
 });
 
 Route::get('/dashboard', function () {
-    $is_admin = request()->user()->role === 'nurse_admin';
+    $user = request()->user();
+    $is_admin = $user->role === 'nurse_admin';
 
-    return Inertia::render('Dashboard', [
-        'stats' => [
-            'total_nurses' => User::where('role', 'nurse_staff')->count(),
-            'active_nurses' => User::where('role', 'nurse_staff')
-                ->whereHas('nurseProfile', fn ($q) => $q->where('is_active', true))
-                ->count(),
-            'units' => Unit::count(),
-            'pending_requests' => 0,
-        ],
-        'nurses' => $is_admin
-            ? User::where('role', 'nurse_staff')->with('nurseProfile.unit')->latest()->take(5)->get()
-            : null,
-
-        'units_list' => $is_admin
-            ? Unit::orderBy('name')->withCount([
+    if ($is_admin) {
+        return Inertia::render('Dashboard', [
+            'stats' => [
+                'total_nurses' => User::where('role', 'nurse_staff')->count(),
+                'active_nurses' => User::where('role', 'nurse_staff')
+                    ->whereHas('nurseProfile', fn ($q) => $q->where('is_active', true))
+                    ->count(),
+                'units' => Unit::count(),
+                'pending_requests' => TimeOffRequest::where('status', 'pending')->count(),
+            ],
+            'nurses' => User::where('role', 'nurse_staff')->with('nurseProfile.unit')->latest()->take(5)->get(),
+            'units_list' => Unit::orderBy('name')->withCount([
                 'nurseProfiles as total_count',
                 'nurseProfiles as active_count' => fn ($q) => $q->where('is_active', true),
-            ])->get()
-            : null,
+            ])->get(),
+            'coverage' => (function () {
+                $latest = Schedule::orderByDesc('start_date')->first();
 
-        // 👇 NEW: live coverage gaps for the latest schedule
-        'coverage' => $is_admin ? (function () {
-            $latest = Schedule::orderByDesc('start_date')->first();
+                if (! $latest) {
+                    return null;
+                }
 
-            if (! $latest) {
-                return null;
-            }
+                $days = $latest->shifts()
+                    ->with('nurses')
+                    ->where('date', '>=', now()->toDateString())
+                    ->orderBy('date')
+                    ->get()
+                    ->groupBy(fn ($s) => $s->date->toDateString())
+                    ->map(fn ($g, $date) => [
+                        'date' => $date,
+                        'required' => $g->sum('required_nurses'),
+                        'assigned' => $g->sum(fn ($s) => $s->nurses->count()),
+                    ])
+                    ->values()
+                    ->take(7);
 
-            $days = $latest->shifts()
-                ->with('nurses')
-                ->where('date', '>=', now()->toDateString())
-                ->orderBy('date')
-                ->get()
-                ->groupBy(fn ($s) => $s->date->toDateString())
-                ->map(fn ($g, $date) => [
-                    'date' => $date,
-                    'required' => $g->sum('required_nurses'),
-                    'assigned' => $g->sum(fn ($s) => $s->nurses->count()),
-                ])
-                ->values()
-                ->take(7);
+                return [
+                    'schedule_name' => $latest->name,
+                    'open_slots' => $days->sum(fn ($d) => max(0, $d['required'] - $d['assigned'])),
+                    'days' => $days,
+                ];
+            })(),
+            'pending_time_off' => TimeOffRequest::with('user.nurseProfile.unit')
+            ->where('status', 'pending')
+            ->orderBy('start_date')
+            ->get(),
+        ]);
+    }
 
-            return [
-                'schedule_name' => $latest->name,
-                'open_slots' => $days->sum(fn ($d) => max(0, $d['required'] - $d['assigned'])),
-                'days' => $days,
-            ];
-        })() : null,
+    // 👇 Nurse staff dashboard
+    $shifts = $user->shifts()
+        ->whereHas('schedule', fn ($q) => $q->where('status', 'published'))
+        ->with(['unit', 'schedule'])
+        ->where('date', '>=', now()->startOfWeek()->toDateString())
+        ->orderBy('date')
+        ->orderBy('start_time')
+        ->get();
+
+    return Inertia::render('StaffDashboard', [
+        'shifts' => $shifts,
+        'profile' => [
+            'unit' => $user->nurseProfile?->unit?->name,
+            'max_weekly_hours' => $user->nurseProfile?->max_weekly_hours ?? 40,
+        ],
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -79,6 +96,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/time-off', [TimeOffController::class, 'index'])->name('time-off.index');
+    Route::post('/time-off', [TimeOffController::class, 'store'])->name('time-off.store');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -103,6 +125,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/schedules/{schedule}/publish', [ScheduleController::class, 'publish'])->name('schedules.publish');
     Route::post('/shifts/{shift}/assign', [ScheduleController::class, 'assign'])->name('shifts.assign');
     Route::delete('/shifts/{shift}/nurses/{nurse}', [ScheduleController::class, 'unassign'])->name('shifts.unassign');
+    Route::get('/time-off', [AdminTimeOffController::class, 'index'])->name('time-off.index');
+    Route::patch('/time-off/{timeOffRequest}/approve', [AdminTimeOffController::class, 'approve'])->name('time-off.approve');
+    Route::patch('/time-off/{timeOffRequest}/reject', [AdminTimeOffController::class, 'reject'])->name('time-off.reject');
 });
 
 require __DIR__.'/auth.php';

@@ -25,8 +25,15 @@ export default function AuthenticatedLayout({ header, children }) {
             section: 'Main',
             items: [
                 { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: route().current('dashboard') },
-                { name: 'Schedule', href: isAdmin ? route('admin.schedules.index') : null, icon: CalendarDays, current: route().current('admin.schedules.*') },
-                { name: 'Time Off', href: null, icon: Clock, soon: true },
+                ...(isAdmin
+                    ? [{ name: 'Schedule', href: route('admin.schedules.index'), icon: CalendarDays, current: route().current('admin.schedules.*') }]
+                    : []),
+                {
+                    name: 'Time Off',
+                    href: isAdmin ? route('admin.time-off.index') : route('time-off.index'),
+                    icon: Clock,
+                    current: isAdmin ? route().current('admin.time-off.*') : route().current('time-off.*'),
+                },
             ],
         },
         ...(isAdmin

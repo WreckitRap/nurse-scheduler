@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\TimeOffRequest;
 
 class ScheduleController extends Controller
 {
@@ -40,6 +41,7 @@ class ScheduleController extends Controller
                 ->with('nurseProfile.unit')
                 ->get(),
             'templates_count' => ShiftTemplate::where('is_active', true)->count(),
+            'leaves' => TimeOffRequest::where('status', 'approved')->get(['user_id', 'start_date', 'end_date']),
         ]);
     }
 
@@ -125,6 +127,16 @@ class ScheduleController extends Controller
 
         if (! $nurse->nurseProfile?->is_active) {
             return back()->with('error', 'This nurse is inactive.');
+        }
+
+        $onLeave = $nurse->timeOffRequests()
+            ->where('status', 'approved')
+            ->where('start_date', '<=', $shift->date)
+            ->where('end_date', '>=', $shift->date)
+            ->exists();
+
+        if ($onLeave) {
+            return back()->with('error', $nurse->name.' is on approved leave that day.');
         }
 
         if ($shift->nurses()->where('user_id', $nurse->id)->exists()) {

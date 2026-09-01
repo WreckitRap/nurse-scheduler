@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Building2, CalendarDays, Clock, UserCheck, UserPlus, Users } from 'lucide-react';
+import { router } from '@inertiajs/react';
 
 function StatCard({ icon: Icon, label, value, accent }) {
     return (
@@ -42,7 +43,7 @@ function EmptyState({ icon: Icon, accent, title, text }) {
     );
 }
 
-export default function Dashboard({ stats, nurses, units_list, coverage }) {
+export default function Dashboard({ stats, nurses, units_list, coverage, pending_time_off }) {
     const user = usePage().props.auth.user;
     const isAdmin = user.role === 'nurse_admin';
 
@@ -195,20 +196,61 @@ export default function Dashboard({ stats, nurses, units_list, coverage }) {
                                 >
                                     <Users className="h-4 w-4" /> Manage Nurse Staff
                                 </Link>
-                                <div className="flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-400">
+                                <Link
+                                    href={route('admin.schedules.index')}
+                                    className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                >
                                     <CalendarDays className="h-4 w-4" /> Create Schedule
-                                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold">SOON</span>
-                                </div>
+                                </Link>
                             </div>
                         </Card>
 
                         <Card title="Time Off">
-                            <EmptyState
-                                icon={Clock}
-                                accent="bg-rose-50 text-rose-500"
-                                title="No pending requests"
-                                text="Time-off requests from your team will appear here for approval."
-                            />
+                            {pending_time_off && pending_time_off.length > 0 ? (
+                                <div className="space-y-3">
+                                    {pending_time_off.slice(0, 5).map((r) => (
+                                        <div key={r.id} className="rounded-xl border border-gray-200 p-3">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="min-w-0">
+                                                    <div className="truncate text-sm font-semibold text-gray-900">{r.user.name}</div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {r.user.nurse_profile?.unit?.name ?? '—'} ·{' '}
+                                                        {new Date(r.start_date.slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                        {' → '}
+                                                        {new Date(r.end_date.slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                    </div>
+                                                </div>
+                                                <div className="flex shrink-0 gap-1.5">
+                                                    <button
+                                                        onClick={() => router.patch(route('admin.time-off.approve', r.id), {}, { preserveScroll: true })}
+                                                        className="rounded-lg bg-green-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                                                        title="Approve"
+                                                    >
+                                                        ✓
+                                                    </button>
+                                                    <button
+                                                        onClick={() => router.patch(route('admin.time-off.reject', r.id), {}, { preserveScroll: true })}
+                                                        className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                                                        title="Reject"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <a href={route('admin.time-off.index')} className="block text-center text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+                                        Review all requests →
+                                    </a>
+                                </div>
+                            ) : (
+                                <EmptyState
+                                    icon={Clock}
+                                    accent="bg-rose-50 text-rose-600"
+                                    title="No pending requests"
+                                    text="Time-off requests from your team will appear here for approval."
+                                />
+                            )}
                         </Card>
                     </div>
                 </>

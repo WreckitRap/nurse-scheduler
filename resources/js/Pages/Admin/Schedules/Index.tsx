@@ -23,6 +23,8 @@ interface Shift {
 
 interface Schedule { id: number; name: string; start_date: string; end_date: string; status: string; shifts_count?: number }
 
+interface Leave { user_id: number; start_date: string; end_date: string }
+
 const COLOR_BAR: Record<string, string> = {
     indigo: 'border-l-indigo-500',
     green: 'border-l-green-500',
@@ -65,14 +67,14 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 const input = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
-function CalendarBoard({ schedule, shifts, nurses }: { schedule: Schedule | null; shifts: Shift[]; nurses: Nurse[] }) {
+function CalendarBoard({ schedule, shifts, nurses, leaves }: { schedule: Schedule | null; shifts: Shift[]; nurses: Nurse[]; leaves: Leave[] }) {
     const [month, setMonth] = useState(() => {
         const base = schedule ? schedule.start_date.slice(0, 10) : new Date().toISOString().slice(0, 10);
         return new Date(base + 'T00:00:00');
     });
     const [selectedDate, setSelectedDate] = useState<string | null>(schedule ? schedule.start_date.slice(0, 10) : null);
     const [assignShiftId, setAssignShiftId] = useState<number | null>(null);
-    const assignShift = useMemo(() => shifts.find((s) => s.id === assignShiftId) ?? null, [shifts, assignShiftId]); 
+    const assignShift = useMemo(() => shifts.find((s) => s.id === assignShiftId) ?? null, [shifts, assignShiftId]);
 
     useEffect(() => {
         const base = schedule ? schedule.start_date.slice(0, 10) : new Date().toISOString().slice(0, 10);
@@ -106,13 +108,13 @@ function CalendarBoard({ schedule, shifts, nurses }: { schedule: Schedule | null
             .filter((s) => s.nurses.some((n) => n.id === nurseId))
             .reduce((sum, s) => sum + shiftHours(s), 0);
 
-   const conflictFor = (nurse: Nurse, shift: Shift) =>
-    shifts.find(
-        (s) =>
-            s.id !== shift.id &&
-            s.date.slice(0, 10) === shift.date.slice(0, 10) &&
-            s.nurses.some((n) => n.id === nurse.id),
-    ) ?? null;
+    const conflictFor = (nurse: Nurse, shift: Shift) =>
+        shifts.find(
+            (s) =>
+                s.id !== shift.id &&
+                s.date.slice(0, 10) === shift.date.slice(0, 10) &&
+                s.nurses.some((n) => n.id === nurse.id),
+        ) ?? null;
 
     const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
@@ -132,7 +134,15 @@ function CalendarBoard({ schedule, shifts, nurses }: { schedule: Schedule | null
         let forward = 0;
         while (dates.has(shiftDay(dateStr, forward + 1))) forward++;
         return back + 1 + forward;
-    };  
+    };
+
+    const onLeaveFor = (nurseId: number, dateStr: string) =>
+        leaves.some(
+            (l) =>
+                l.user_id === nurseId &&
+                l.start_date.slice(0, 10) <= dateStr &&
+                l.end_date.slice(0, 10) >= dateStr,
+        );
 
     return (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -256,6 +266,7 @@ function CalendarBoard({ schedule, shifts, nurses }: { schedule: Schedule | null
                             const max = n.nurse_profile?.max_weekly_hours ?? 40;
                             const wouldExceed = assignShift ? hours + shiftHours(assignShift) > max : false;
                             const overStreak = assignShift && !assigned ? streakIfAdded(n.id, assignShift.date.slice(0, 10)) > 3 : false;
+                            const onLeave = assignShift && !assigned ? onLeaveFor(n.id, assignShift.date.slice(0, 10)) : false;
 
                             return (
                                 <div key={n.id} className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2.5">
@@ -269,7 +280,8 @@ function CalendarBoard({ schedule, shifts, nurses }: { schedule: Schedule | null
                                         </div>
                                         {conflict && <div className="text-xs font-medium text-red-600">Already on duty: {conflict.unit?.name} {fmt(conflict.start_time)}</div>}
                                         {overStreak && <div className="text-xs font-medium text-red-600">3 days straight already</div>}
-                                        </div>
+                                        {onLeave && <div className="text-xs font-medium text-red-600">On approved leave</div>}
+                                    </div>
                                     {assigned ? (
                                         <button
                                             onClick={() => assignShift && router.delete(route('admin.shifts.unassign', [assignShift.id, n.id]), { preserveScroll: true })}
@@ -279,7 +291,7 @@ function CalendarBoard({ schedule, shifts, nurses }: { schedule: Schedule | null
                                         </button>
                                     ) : (
                                         <button
-                                            disabled={!!conflict || overStreak}
+                                            disabled={!!conflict || overStreak || onLeave}
                                             onClick={() => assignShift && router.post(route('admin.shifts.assign', assignShift.id), { nurse_id: n.id }, { preserveScroll: true })}
                                             className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
                                         >
@@ -296,11 +308,12 @@ function CalendarBoard({ schedule, shifts, nurses }: { schedule: Schedule | null
     );
 }
 
-export default function Index({ schedules, schedule, shifts, nurses, templates_count }: {
+export default function Index({ schedules, schedule, shifts, nurses, leaves, templates_count }: {
     schedules: Schedule[];
     schedule: Schedule | null;
     shifts: Shift[];
     nurses: Nurse[];
+    leaves: Leave[];
     templates_count: number;
 }) {
     const flash = (usePage().props as any).flash;
@@ -371,7 +384,11 @@ export default function Index({ schedules, schedule, shifts, nurses, templates_c
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {schedules.map((s) => (
-                                    <tr key={s.id} className={(schedule?.id === s.id ? 'bg-indigo-50/50 ' : '') + 'hover:bg-gray-50/60'}>
+                                    <tr
+                                        key={s.id}
+                                        onClick={() => router.get(route('admin.schedules.index', { schedule: s.id }))}
+                                        className={(schedule?.id === s.id ? 'bg-indigo-100 ' : '') + 'cursor-pointer hover:bg-indigo-100'}
+                                    >
                                         <td className="px-5 py-4 font-semibold text-gray-900">{s.name}</td>
                                         <td className="px-5 py-4 text-gray-600">{s.start_date.slice(0, 10)} → {s.end_date.slice(0, 10)}</td>
                                         <td className="px-5 py-4 text-gray-600">{s.shifts_count}</td>
@@ -392,12 +409,6 @@ export default function Index({ schedules, schedule, shifts, nurses, templates_c
                                                         Publish
                                                     </button>
                                                 )}
-                                                <Link
-                                                    href={route('admin.schedules.index', { schedule: s.id })}
-                                                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                                                >
-                                                    Select
-                                                </Link>
                                             </div>
                                         </td>
                                     </tr>
@@ -455,7 +466,7 @@ export default function Index({ schedules, schedule, shifts, nurses, templates_c
 
             {/* Bottom: calendar + day shifts */}
             <div className="mt-6">
-                <CalendarBoard schedule={schedule} shifts={shifts} nurses={nurses} />
+                <CalendarBoard schedule={schedule} shifts={shifts} nurses={nurses} leaves={leaves} />
             </div>
         </AuthenticatedLayout>
     );
