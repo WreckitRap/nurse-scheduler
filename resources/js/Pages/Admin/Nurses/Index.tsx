@@ -38,6 +38,7 @@ interface Nurse {
         employment_type: string;
         max_weekly_hours: number;
         is_active: boolean;
+        avatar: string | null;
         unit: { id: number; name: string } | null;
     } | null;
 }
@@ -48,9 +49,9 @@ const PER_PAGE = 10;
 
 function StatusChip({ active }: { active: boolean }) {
     return active ? (
-        <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">Active</span>
+        <span className="rounded-full bg-green-100 dark:bg-green-900/40 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-300">Active</span>
     ) : (
-        <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">Inactive</span>
+        <span className="rounded-full bg-red-100 dark:bg-red-900/40 px-2.5 py-1 text-xs font-medium text-red-700 dark:text-red-300">Inactive</span>
     );
 }
 
@@ -128,24 +129,24 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
         sortKey === k ? (
             sortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
         ) : (
-            <ArrowUpDown className="h-3.5 w-3.5 text-gray-300" />
+            <ArrowUpDown className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
         );
 
     const rowMenu = (n: Nurse) => (
         <div className="relative inline-block">
             <button
                 onClick={() => setMenuOpen(menuOpen === n.id ? null : n.id)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
             >
                 <MoreHorizontal className="h-4 w-4" />
             </button>
             {menuOpen === n.id && (
                 <>
                     <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
-                    <div className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                    <div className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
                         <Link
                             href={route('admin.nurses.edit', n.id)}
-                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                             <Pencil className="h-4 w-4" /> Edit
                         </Link>
@@ -156,7 +157,9 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                             }}
                             className={
                                 'flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm ' +
-                                (n.nurse_profile?.is_active ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50')
+                                (n.nurse_profile?.is_active
+                                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                    : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20')
                             }
                         >
                             {n.nurse_profile?.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
@@ -167,7 +170,7 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                                 setMenuOpen(null);
                                 setDeleteTarget(n);
                             }}
-                            className="flex w-full items-center gap-2 border-t border-gray-100 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                            className="flex w-full items-center gap-2 border-t border-gray-100 dark:border-gray-700 px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
                             <Trash2 className="h-4 w-4" /> Delete
                         </button>
@@ -181,30 +184,30 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
         <AuthenticatedLayout
             header={
                 <div>
-                    <h1 className="text-xl font-bold text-gray-900">Nurse Staff</h1>
-                    <p className="text-sm text-gray-500">Manage your nursing team accounts and profiles.</p>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">Nurse Staff</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Manage your nursing team accounts and profiles.</p>
                 </div>
             }
         >
             <Head title="Nurse Staff" />
 
             {flash?.success && (
-                <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                <div className="mb-4 rounded-xl border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 px-4 py-3 text-sm font-medium text-green-700 dark:text-green-300">
                     {flash.success}
                 </div>
             )}
 
-            <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
                 {/* Toolbar */}
-                <div className="flex flex-col gap-3 border-b border-gray-100 p-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-3 border-b border-gray-100 dark:border-gray-700 p-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-1 flex-col gap-3 sm:flex-row">
                         <div className="relative sm:max-w-xs sm:flex-1">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                             <input
                                 value={search}
                                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                                 placeholder="Search name, email, ID..."
-                                className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 py-2.5 pl-9 pr-3 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             />
                         </div>
 
@@ -250,7 +253,7 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                 <div className="hidden flex-1 overflow-x-auto md:block">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-gray-100 bg-gray-50 text-left text-sm font-medium text-gray-700">
+                            <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                                 <th className="px-5 py-3.5">No.</th>
                                 <th className="px-5 py-3.5">
                                     <button className="flex items-center gap-1.5" onClick={() => toggleSort('name')}>
@@ -273,25 +276,25 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                                 <th className="px-5 py-3.5"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {paged.map((n, i) => (
-                                <tr key={n.id} className="hover:bg-gray-50/60">
-                                    <td className="px-5 py-4 text-gray-500">{from + i}</td>
+                                <tr key={n.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-700/50">
+                                    <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{from + i}</td>
                                     <td className="px-5 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
-                                                {n.name.charAt(0)}
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-lg">
+                                                {n.nurse_profile?.avatar || n.name.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="font-semibold text-gray-900">{n.name}</div>
-                                                <div className="text-xs text-gray-500">{n.email}</div>
+                                                <div className="font-semibold text-gray-900 dark:text-white">{n.name}</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">{n.email}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4 text-gray-600">{n.nurse_profile?.employee_no ?? '—'}</td>
-                                    <td className="px-5 py-4 text-gray-600">{n.nurse_profile?.unit?.name ?? '—'}</td>
-                                    <td className="px-5 py-4 capitalize text-gray-600">{(n.nurse_profile?.employment_type ?? '').replace('_', '-')}</td>
-                                    <td className="px-5 py-4 text-gray-600">{n.nurse_profile?.max_weekly_hours}</td>
+                                    <td className="px-5 py-4 text-gray-600 dark:text-gray-300">{n.nurse_profile?.employee_no ?? '—'}</td>
+                                    <td className="px-5 py-4 text-gray-600 dark:text-gray-300">{n.nurse_profile?.unit?.name ?? '—'}</td>
+                                    <td className="px-5 py-4 capitalize text-gray-600 dark:text-gray-300">{(n.nurse_profile?.employment_type ?? '').replace('_', '-')}</td>
+                                    <td className="px-5 py-4 text-gray-600 dark:text-gray-300">{n.nurse_profile?.max_weekly_hours}</td>
                                     <td className="px-5 py-4"><StatusChip active={!!n.nurse_profile?.is_active} /></td>
                                     <td className="px-5 py-4 text-right">{rowMenu(n)}</td>
                                 </tr>
@@ -300,9 +303,9 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                                 <tr>
                                     <td colSpan={8}>
                                         <div className="flex flex-col items-center justify-center py-14 text-center">
-                                            <div className="rounded-2xl bg-indigo-50 p-4"><Users className="h-6 w-6 text-indigo-600" /></div>
-                                            <div className="mt-3 text-sm font-semibold text-gray-900">No nurses found</div>
-                                            <p className="mt-1 text-xs text-gray-500">Try changing your search or filters.</p>
+                                            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-900/40 p-4"><Users className="h-6 w-6 text-indigo-600 dark:text-indigo-300" /></div>
+                                            <div className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">No nurses found</div>
+                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Try changing your search or filters.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -314,46 +317,46 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                 {/* Mobile cards */}
                 <div className="flex-1 space-y-4 p-4 md:hidden">
                     {paged.map((n) => (
-                        <div key={n.id} className="rounded-2xl border border-gray-200 p-4">
+                        <div key={n.id} className="rounded-2xl border border-gray-200 dark:border-gray-600 p-4">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
-                                        {n.name.charAt(0)}
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-lg">
+                                        {n.nurse_profile?.avatar || n.name.charAt(0)}
                                     </div>
                                     <div>
-                                        <div className="text-sm font-semibold text-gray-900">{n.name}</div>
-                                        <div className="text-xs text-gray-500">{n.email}</div>
+                                        <div className="text-sm font-semibold text-gray-900 dark:text-white">{n.name}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">{n.email}</div>
                                     </div>
                                 </div>
                                 {rowMenu(n)}
                             </div>
-                            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3 text-xs">
-                                <div><div className="text-gray-500">Employee #</div><div className="font-semibold text-gray-900">{n.nurse_profile?.employee_no ?? '—'}</div></div>
-                                <div><div className="text-gray-500">Unit</div><div className="font-semibold text-gray-900">{n.nurse_profile?.unit?.name ?? '—'}</div></div>
-                                <div><div className="text-gray-500">Type</div><div className="font-semibold capitalize text-gray-900">{(n.nurse_profile?.employment_type ?? '').replace('_', '-')}</div></div>
-                                <div><div className="text-gray-500">Status</div><div className="mt-0.5"><StatusChip active={!!n.nurse_profile?.is_active} /></div></div>
+                            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 p-3 text-xs">
+                                <div><div className="text-gray-500 dark:text-gray-400">Employee #</div><div className="font-semibold text-gray-900 dark:text-white">{n.nurse_profile?.employee_no ?? '—'}</div></div>
+                                <div><div className="text-gray-500 dark:text-gray-400">Unit</div><div className="font-semibold text-gray-900 dark:text-white">{n.nurse_profile?.unit?.name ?? '—'}</div></div>
+                                <div><div className="text-gray-500 dark:text-gray-400">Type</div><div className="font-semibold capitalize text-gray-900 dark:text-white">{(n.nurse_profile?.employment_type ?? '').replace('_', '-')}</div></div>
+                                <div><div className="text-gray-500 dark:text-gray-400">Status</div><div className="mt-0.5"><StatusChip active={!!n.nurse_profile?.is_active} /></div></div>
                             </div>
                         </div>
                     ))}
                     {paged.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-14 text-center">
-                            <div className="rounded-2xl bg-indigo-50 p-4"><Users className="h-6 w-6 text-indigo-600" /></div>
-                            <div className="mt-3 text-sm font-semibold text-gray-900">No nurses found</div>
-                            <p className="mt-1 text-xs text-gray-500">Try changing your search or filters.</p>
+                            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-900/40 p-4"><Users className="h-6 w-6 text-indigo-600 dark:text-indigo-300" /></div>
+                            <div className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">No nurses found</div>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Try changing your search or filters.</p>
                         </div>
                     )}
                 </div>
 
                 {/* Footer */}
-                <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 sm:flex-row">
-                    <p className="text-sm text-gray-500">
+                <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 dark:border-gray-700 px-5 py-4 sm:flex-row">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                         Showing {from} - {to} of {filtered.length} nurses
                     </p>
                     <div className="flex items-center gap-1">
                         <button
                             disabled={current === 1}
                             onClick={() => setPage(current - 1)}
-                            className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             <ChevronLeft className="h-4 w-4" /> Prev
                         </button>
@@ -363,7 +366,7 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                                 onClick={() => setPage(p)}
                                 className={
                                     'h-9 w-9 rounded-lg text-sm font-medium ' +
-                                    (p === current ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50')
+                                    (p === current ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700')
                                 }
                             >
                                 {p}
@@ -372,7 +375,7 @@ export default function Index({ nurses, units }: { nurses: Nurse[]; units: Unit[
                         <button
                             disabled={current === totalPages}
                             onClick={() => setPage(current + 1)}
-                            className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             Next <ChevronRight className="h-4 w-4" />
                         </button>

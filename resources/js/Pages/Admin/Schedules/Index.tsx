@@ -65,7 +65,7 @@ const fmt = (t: string) => {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-const input = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
+const input = 'w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
 function CalendarBoard({ schedule, shifts, nurses, leaves }: { schedule: Schedule | null; shifts: Shift[]; nurses: Nurse[]; leaves: Leave[] }) {
     const [month, setMonth] = useState(() => {
@@ -147,22 +147,22 @@ function CalendarBoard({ schedule, shifts, nurses, leaves }: { schedule: Schedul
     return (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             {/* Calendar */}
-            <div className="h-fit rounded-2xl border border-gray-200 bg-white shadow-sm">
-                <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-                    <div className="text-sm font-semibold text-gray-900">
+            <div className="h-fit rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-5 py-4">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
                         {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </div>
                     <div className="flex gap-1">
-                        <button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100">
+                        <button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
                             <ChevronLeft className="h-4 w-4" />
                         </button>
-                        <button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100">
+                        <button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
                             <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
                 </div>
                 <div className="p-4">
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase text-gray-400">
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
                         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => <div key={d} className="py-1">{d}</div>)}
                     </div>
                     <div className="mt-1 grid grid-cols-7 gap-1">
@@ -178,8 +178,8 @@ function CalendarBoard({ schedule, shifts, nurses, leaves }: { schedule: Schedul
                                         (selectedDate === ds
                                             ? 'bg-indigo-600 font-bold text-white'
                                             : rangeStart && rangeEnd && ds >= rangeStart && ds <= rangeEnd
-                                              ? 'bg-indigo-50 font-semibold text-indigo-700 hover:bg-indigo-100'
-                                              : 'text-gray-700 hover:bg-gray-100')
+                                              ? 'bg-indigo-50 dark:bg-indigo-900/40 font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60'
+                                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700')
                                     }
                                 >
                                     {Number(ds.slice(8, 10))}
@@ -188,7 +188,7 @@ function CalendarBoard({ schedule, shifts, nurses, leaves }: { schedule: Schedul
                         )}
                     </div>
                     {schedule && (
-                        <p className="mt-3 rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
+                        <p className="mt-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 px-3 py-2 text-xs text-indigo-700 dark:text-indigo-300">
                             Highlighted days belong to <strong>{schedule.name}</strong>. Click a day to see its shifts.
                         </p>
                     )}
@@ -197,34 +197,36 @@ function CalendarBoard({ schedule, shifts, nurses, leaves }: { schedule: Schedul
 
             {/* Day shifts */}
             <div className="xl:col-span-2">
-                <div className="h-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                    <div className="border-b border-gray-100 px-5 py-4 text-sm font-semibold text-gray-900">
+                <div className="h-full overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                    <div className="border-b border-gray-100 dark:border-gray-700 px-5 py-4 text-sm font-semibold text-gray-900 dark:text-white">
                         {selectedDate
                             ? 'Shifts for ' + new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
                             : 'Pick a day on the calendar'}
                     </div>
                     <div className="grid grid-cols-1 gap-3 p-5 md:grid-cols-2">
                         {dayShifts.map((s) => (
-                            <div key={s.id} className={'rounded-xl border border-gray-200 border-l-4 bg-white p-4 shadow-sm ' + (COLOR_BAR[s.color] ?? 'border-l-indigo-500')}>
+                            <div key={s.id} className={'rounded-xl border border-gray-200 dark:border-gray-600 border-l-4 bg-white dark:bg-gray-700/50 p-4 shadow-sm ' + (COLOR_BAR[s.color] ?? 'border-l-indigo-500')}>
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-sm font-semibold text-gray-900">{s.unit?.name}</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{s.unit?.name}</span>
                                     <span
                                         className={
                                             'rounded-full px-2 py-0.5 text-xs font-medium ' +
-                                            (s.nurses.length >= s.required_nurses ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')
+                                            (s.nurses.length >= s.required_nurses
+                                                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                                                : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300')
                                         }
                                     >
                                         {s.nurses.length}/{s.required_nurses}
                                     </span>
                                 </div>
-                                <div className="mt-0.5 text-xs text-gray-500">{fmt(s.start_time)} – {fmt(s.end_time)}</div>
+                                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{fmt(s.start_time)} – {fmt(s.end_time)}</div>
                                 <div className="mt-2 flex flex-wrap gap-1">
                                     {s.nurses.map((n) => (
-                                        <span key={n.id} className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                                        <span key={n.id} className="flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">
                                             {n.name}
                                             <button
                                                 onClick={() => router.delete(route('admin.shifts.unassign', [s.id, n.id]), { preserveScroll: true })}
-                                                className="text-indigo-400 hover:text-red-600"
+                                                className="text-indigo-400 hover:text-red-600 dark:hover:text-red-400"
                                                 title="Remove"
                                             >
                                                 ×
@@ -234,14 +236,14 @@ function CalendarBoard({ schedule, shifts, nurses, leaves }: { schedule: Schedul
                                 </div>
                                 <button
                                     onClick={() => setAssignShiftId(s.id)}
-                                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/40 px-3 py-2 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60"
                                 >
                                     <UserPlus className="h-3.5 w-3.5" /> Assign Nurse
                                 </button>
                             </div>
                         ))}
                         {dayShifts.length === 0 && (
-                            <div className="col-span-full py-10 text-center text-sm text-gray-500">
+                            <div className="col-span-full py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                                 No shifts on this day for the selected schedule.
                             </div>
                         )}
@@ -269,23 +271,23 @@ function CalendarBoard({ schedule, shifts, nurses, leaves }: { schedule: Schedul
                             const onLeave = assignShift && !assigned ? onLeaveFor(n.id, assignShift.date.slice(0, 10)) : false;
 
                             return (
-                                <div key={n.id} className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2.5">
+                                <div key={n.id} className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-600 px-3 py-2.5">
                                     <div>
-                                        <div className="text-sm font-semibold text-gray-900">{n.name}</div>
-                                        <div className="text-xs text-gray-500">
+                                        <div className="text-sm font-semibold text-gray-900 dark:text-white">{n.name}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
                                             {n.nurse_profile?.unit?.name ?? 'No unit'} ·{' '}
-                                            <span className={hours + (assignShift && !assigned ? shiftHours(assignShift) : 0) > max ? 'font-semibold text-amber-600' : ''}>
+                                            <span className={hours + (assignShift && !assigned ? shiftHours(assignShift) : 0) > max ? 'font-semibold text-amber-600 dark:text-amber-400' : ''}>
                                                 {hours}h / {max}h{wouldExceed && !assigned ? ' ⚠' : ''}
                                             </span>
                                         </div>
-                                        {conflict && <div className="text-xs font-medium text-red-600">Already on duty: {conflict.unit?.name} {fmt(conflict.start_time)}</div>}
-                                        {overStreak && <div className="text-xs font-medium text-red-600">3 days straight already</div>}
-                                        {onLeave && <div className="text-xs font-medium text-red-600">On approved leave</div>}
+                                        {conflict && <div className="text-xs font-medium text-red-600 dark:text-red-400">Already on duty: {conflict.unit?.name} {fmt(conflict.start_time)}</div>}
+                                        {overStreak && <div className="text-xs font-medium text-red-600 dark:text-red-400">3 days straight already</div>}
+                                        {onLeave && <div className="text-xs font-medium text-red-600 dark:text-red-400">On approved leave</div>}
                                     </div>
                                     {assigned ? (
                                         <button
                                             onClick={() => assignShift && router.delete(route('admin.shifts.unassign', [assignShift.id, n.id]), { preserveScroll: true })}
-                                            className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                                            className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900/50 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                                         >
                                             <UserMinus className="h-3.5 w-3.5" /> Remove
                                         </button>
@@ -328,38 +330,38 @@ export default function Index({ schedules, schedule, shifts, nurses, leaves, tem
         <AuthenticatedLayout
             header={
                 <div>
-                    <h1 className="text-xl font-bold text-gray-900">Schedules</h1>
-                    <p className="text-sm text-gray-500">Build weekly rosters from your shift templates.</p>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">Schedules</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Build weekly rosters from your shift templates.</p>
                 </div>
             }
         >
             <Head title="Schedules" />
 
-            {flash?.success && <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">{flash.success}</div>}
-            {flash?.error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{flash.error}</div>}
+            {flash?.success && <div className="mb-4 rounded-xl border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 px-4 py-3 text-sm font-medium text-green-700 dark:text-green-300">{flash.success}</div>}
+            {flash?.error && <div className="mb-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300">{flash.error}</div>}
 
             {/* Top: create + list */}
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                <div className="h-fit rounded-2xl border border-gray-200 bg-white shadow-sm">
-                    <div className="border-b border-gray-100 px-5 py-4 text-sm font-semibold text-gray-900">Create Schedule</div>
+                <div className="h-fit rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                    <div className="border-b border-gray-100 dark:border-gray-700 px-5 py-4 text-sm font-semibold text-gray-900 dark:text-white">Create Schedule</div>
                     <form onSubmit={submit} className="space-y-4 p-5">
                         <div>
-                            <label className="mb-1 block text-sm font-medium text-gray-700">Name (optional)</label>
+                            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name (optional)</label>
                             <input className={input} value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="Auto: Sep 01 – Sep 07, 2026" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">Start Date</label>
+                                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
                                 <input type="date" className={input} value={data.start_date} onChange={(e) => setData('start_date', e.target.value)} required />
-                                {errors.start_date && <p className="mt-1 text-xs text-red-600">{errors.start_date}</p>}
+                                {errors.start_date && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.start_date}</p>}
                             </div>
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">End Date</label>
+                                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
                                 <input type="date" className={input} value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} required />
-                                {errors.end_date && <p className="mt-1 text-xs text-red-600">{errors.end_date}</p>}
+                                {errors.end_date && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.end_date}</p>}
                             </div>
                         </div>
-                        <p className="rounded-xl bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
+                        <p className="rounded-xl bg-indigo-50 dark:bg-indigo-900/40 px-3 py-2 text-xs text-indigo-700 dark:text-indigo-300">
                             Shifts auto-generated from <strong>{templates_count}</strong> active template(s) × every unit × every day.
                         </p>
                         <button type="submit" disabled={processing} className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
@@ -369,12 +371,12 @@ export default function Index({ schedules, schedule, shifts, nurses, leaves, tem
                 </div>
 
             <div className="xl:col-span-2">
-                <div className="h-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <div className="h-full overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
                     {/* Desktop table */}
                     <div className="hidden md:block">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="border-b border-gray-100 bg-gray-50 text-left text-sm font-medium text-gray-700">
+                                <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                                     <th className="px-5 py-3.5">Schedule</th>
                                     <th className="px-5 py-3.5">Period</th>
                                     <th className="px-5 py-3.5">Shifts</th>
@@ -382,21 +384,21 @@ export default function Index({ schedules, schedule, shifts, nurses, leaves, tem
                                     <th className="px-5 py-3.5 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                 {schedules.map((s) => (
                                     <tr
                                         key={s.id}
                                         onClick={() => router.get(route('admin.schedules.index', { schedule: s.id }))}
-                                        className={(schedule?.id === s.id ? 'bg-indigo-100 ' : '') + 'cursor-pointer hover:bg-indigo-100'}
+                                        className={(schedule?.id === s.id ? 'bg-indigo-100 dark:bg-indigo-900/40 ' : '') + 'cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30'}
                                     >
-                                        <td className="px-5 py-4 font-semibold text-gray-900">{s.name}</td>
-                                        <td className="px-5 py-4 text-gray-600">{s.start_date.slice(0, 10)} → {s.end_date.slice(0, 10)}</td>
-                                        <td className="px-5 py-4 text-gray-600">{s.shifts_count}</td>
+                                        <td className="px-5 py-4 font-semibold text-gray-900 dark:text-white">{s.name}</td>
+                                        <td className="px-5 py-4 text-gray-600 dark:text-gray-300">{s.start_date.slice(0, 10)} → {s.end_date.slice(0, 10)}</td>
+                                        <td className="px-5 py-4 text-gray-600 dark:text-gray-300">{s.shifts_count}</td>
                                         <td className="px-5 py-4">
                                             {s.status === 'published' ? (
-                                                <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">Published</span>
+                                                <span className="rounded-full bg-green-100 dark:bg-green-900/40 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-300">Published</span>
                                             ) : (
-                                                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">Draft</span>
+                                                <span className="rounded-full bg-amber-100 dark:bg-amber-900/40 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">Draft</span>
                                             )}
                                         </td>
                                         <td className="px-5 py-4">
@@ -404,7 +406,7 @@ export default function Index({ schedules, schedule, shifts, nurses, leaves, tem
                                                 {s.status === 'draft' && (
                                                     <button
                                                         onClick={() => router.patch(route('admin.schedules.publish', s.id), {}, { preserveScroll: true })}
-                                                        className="rounded-lg border border-green-200 px-3 py-1.5 text-xs font-semibold text-green-600 hover:bg-green-50"
+                                                        className="rounded-lg border border-green-200 dark:border-green-900/50 px-3 py-1.5 text-xs font-semibold text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
                                                     >
                                                         Publish
                                                     </button>
@@ -414,41 +416,41 @@ export default function Index({ schedules, schedule, shifts, nurses, leaves, tem
                                     </tr>
                                 ))}
                                 {schedules.length === 0 && (
-                                    <tr><td colSpan={5} className="px-5 py-14 text-center text-sm text-gray-500">No schedules yet. Create your first weekly roster on the left.</td></tr>
+                                    <tr><td colSpan={5} className="px-5 py-14 text-center text-sm text-gray-500 dark:text-gray-400">No schedules yet. Create your first weekly roster on the left.</td></tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
 
                     {/* Mobile cards */}
-                    <div className="divide-y divide-gray-100 md:hidden">
+                    <div className="divide-y divide-gray-100 dark:divide-gray-700 md:hidden">
                         {schedules.map((s) => (
-                            <div key={s.id} className={(schedule?.id === s.id ? 'bg-indigo-50/50 ' : '') + 'p-4'}>
+                            <div key={s.id} className={(schedule?.id === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20 ' : '') + 'p-4'}>
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0">
-                                        <div className="truncate text-sm font-semibold text-gray-900">{s.name}</div>
-                                        <div className="mt-0.5 text-xs text-gray-500">{s.start_date.slice(0, 10)} → {s.end_date.slice(0, 10)}</div>
+                                        <div className="truncate text-sm font-semibold text-gray-900 dark:text-white">{s.name}</div>
+                                        <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{s.start_date.slice(0, 10)} → {s.end_date.slice(0, 10)}</div>
                                     </div>
                                     {s.status === 'published' ? (
-                                        <span className="shrink-0 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">Published</span>
+                                        <span className="shrink-0 rounded-full bg-green-100 dark:bg-green-900/40 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-300">Published</span>
                                     ) : (
-                                        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">Draft</span>
+                                        <span className="shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/40 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">Draft</span>
                                     )}
                                 </div>
                                 <div className="mt-3 flex items-center justify-between gap-2">
-                                    <span className="text-xs text-gray-500">{s.shifts_count} shifts</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">{s.shifts_count} shifts</span>
                                     <div className="flex gap-2">
                                         {s.status === 'draft' && (
                                             <button
                                                 onClick={() => router.patch(route('admin.schedules.publish', s.id), {}, { preserveScroll: true })}
-                                                className="rounded-lg border border-green-200 px-3 py-1.5 text-xs font-semibold text-green-600 hover:bg-green-50"
+                                                className="rounded-lg border border-green-200 dark:border-green-900/50 px-3 py-1.5 text-xs font-semibold text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
                                             >
                                                 Publish
                                             </button>
                                         )}
                                         <Link
                                             href={route('admin.schedules.index', { schedule: s.id })}
-                                            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                                            className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                                         >
                                             Select
                                         </Link>
@@ -457,7 +459,7 @@ export default function Index({ schedules, schedule, shifts, nurses, leaves, tem
                             </div>
                         ))}
                         {schedules.length === 0 && (
-                            <div className="p-10 text-center text-sm text-gray-500">No schedules yet. Create your first weekly roster above.</div>
+                            <div className="p-10 text-center text-sm text-gray-500 dark:text-gray-400">No schedules yet. Create your first weekly roster above.</div>
                         )}
                     </div>
                 </div>

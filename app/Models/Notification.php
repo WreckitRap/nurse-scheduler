@@ -5,16 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TimeOffRequest extends Model
+class Notification extends Model
 {
     /**************************************************************************/
     /* Processing Hierarchy                                                   */
     /**************************************************************************/
     // $fillable                     (1.0)  Attributes that are mass assignable.
     // $casts                        (2.0)  Attributes casting definitions.
-    // user                          (3.0)  The user who submitted the request.
-    // decider                       (4.0)  The admin who approved or rejected
-    //                                      the request.
+    // user                          (3.0)  The user who receives the
+    //                                      notification.
 
     /**
      * <Layer number> (1.0)
@@ -24,7 +23,7 @@ class TimeOffRequest extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['user_id', 'start_date', 'end_date', 'reason', 'status', 'decided_by', 'decided_at'];
+    protected $fillable = ['user_id', 'message', 'link', 'read_at'];
 
     /**
      * <Layer number> (2.0)
@@ -34,31 +33,18 @@ class TimeOffRequest extends Model
      *
      * @var array<string, string>
      */
-    protected $casts = ['start_date' => 'date', 'end_date' => 'date', 'decided_at' => 'datetime'];
+    protected $casts = ['read_at' => 'datetime'];
 
     /**
      * <Layer number> (3.0)
      *
      * <Processing name> user
-     * <Function> The user who submitted the time-off request.
+     * <Function> The user who receives the notification.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * <Layer number> (4.0)
-     *
-     * <Processing name> decider
-     * <Function> The admin who approved or rejected the time-off request.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function decider(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'decided_by');
     }
 }

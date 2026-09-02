@@ -69,20 +69,20 @@ export default function Show({ schedule, shifts }: { schedule: Schedule; shifts:
             header={
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">{schedule.name}</h1>
-                        <p className="mt-1 flex items-center gap-2 text-sm text-gray-500">
+                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">{schedule.name}</h1>
+                        <p className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                             {dates.length} days · {shifts.length} shifts
                             {schedule.status === 'published' ? (
-                                <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Published</span>
+                                <span className="rounded-full bg-green-100 dark:bg-green-900/40 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">Published</span>
                             ) : (
-                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Draft</span>
+                                <span className="rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">Draft</span>
                             )}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
                         <Link
                             href={route('admin.schedules.index')}
-                            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                            className="flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                             <ArrowLeft className="h-4 w-4" /> Back
                         </Link>
@@ -100,19 +100,19 @@ export default function Show({ schedule, shifts }: { schedule: Schedule; shifts:
         >
             <Head title={schedule.name} />
 
-            {flash?.success && <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">{flash.success}</div>}
-            {flash?.error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{flash.error}</div>}
+            {flash?.success && <div className="mb-4 rounded-xl border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20 px-4 py-3 text-sm font-medium text-green-700 dark:text-green-300">{flash.success}</div>}
+            {flash?.error && <div className="mb-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300">{flash.error}</div>}
 
             <div className="flex gap-4 overflow-x-auto pb-4">
                 {dates.map((date) => {
                     const day = new Date(date + 'T00:00:00');
                     return (
                         <div key={date} className="w-60 shrink-0">
-                            <div className="mb-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-center shadow-sm">
-                                <div className="text-xs font-semibold uppercase text-gray-400">
+                            <div className="mb-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-center shadow-sm">
+                                <div className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500">
                                     {day.toLocaleDateString('en-US', { weekday: 'short' })}
                                 </div>
-                                <div className="text-sm font-bold text-gray-900">
+                                <div className="text-sm font-bold text-gray-900 dark:text-white">
                                     {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </div>
                             </div>
@@ -121,27 +121,29 @@ export default function Show({ schedule, shifts }: { schedule: Schedule; shifts:
                                 {(byDate[date] ?? []).map((s) => (
                                     <div
                                         key={s.id}
-                                        className={'rounded-xl border border-gray-200 border-l-4 bg-white p-3 shadow-sm ' + (COLOR_BAR[s.color] ?? 'border-l-indigo-500')}
+                                        className={'rounded-xl border border-gray-200 dark:border-gray-600 border-l-4 bg-white dark:bg-gray-800 p-3 shadow-sm ' + (COLOR_BAR[s.color] ?? 'border-l-indigo-500')}
                                     >
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="truncate text-sm font-semibold text-gray-900">{s.unit?.name}</span>
+                                            <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">{s.unit?.name}</span>
                                             <span
                                                 className={
                                                     'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ' +
-                                                    (s.nurses.length >= s.required_nurses ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')
+                                                    (s.nurses.length >= s.required_nurses
+                                                        ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                                                        : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300')
                                                 }
                                             >
                                                 {s.nurses.length}/{s.required_nurses}
                                             </span>
                                         </div>
-                                        <div className="mt-0.5 text-xs text-gray-500">{fmt(s.start_time)} – {fmt(s.end_time)}</div>
+                                        <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{fmt(s.start_time)} – {fmt(s.end_time)}</div>
                                         <div className="mt-2 flex flex-wrap gap-1">
                                             {s.nurses.map((n) => (
-                                                <span key={n.id} className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                                                <span key={n.id} className="rounded-full bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">
                                                     {n.name.split(' ').map((p) => p.charAt(0)).join('').slice(0, 2)}
                                                 </span>
                                             ))}
-                                            {s.nurses.length === 0 && <span className="text-xs text-gray-400">Unassigned</span>}
+                                            {s.nurses.length === 0 && <span className="text-xs text-gray-400 dark:text-gray-500">Unassigned</span>}
                                         </div>
                                     </div>
                                 ))}

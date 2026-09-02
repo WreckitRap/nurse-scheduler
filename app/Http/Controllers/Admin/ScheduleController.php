@@ -20,6 +20,35 @@ class ScheduleController extends Controller
 {
     private const MAX_CONSECUTIVE_DAYS = 3;
 
+    /**************************************************************************/
+    /* Processing Hierarchy                                                   */
+    /**************************************************************************/
+    // index                         (1.0)  Display all schedules with the
+    //                                      selected schedule's shifts.
+    // store                         (2.0)  Create a new schedule and generate
+    //                                      shifts from active templates.
+    // show                          (3.0)  Show a specific schedule's details.
+    // publish                       (4.0)  Publish a draft schedule to make it
+    //                                      visible to staff.
+    // assign                        (5.0)  Assign a nurse to a shift with
+    //                                      conflict validation.
+    // unassign                      (6.0)  Remove a nurse from a shift.
+    // findOverlap                   (7.0)  Find overlapping shifts for a nurse.
+    // overlaps                      (8.0)  Check if two shifts overlap in time.
+    // toMin                         (9.0)  Convert time string to minutes.
+
+    /**
+     * <Layer number> (1.0)
+     *
+     * <Processing name> index
+     * <Function> Display all schedules with shift counts, and load the selected
+     *            schedule (from query parameter or the most recent) with its
+     *            shifts, units, and assigned nurses. Also loads active nurses
+     *            and approved leaves for assignment validation.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Inertia\Response
+     */
     public function index(Request $request): Response
     {
         $schedules = Schedule::withCount('shifts')->orderByDesc('start_date')->get();
@@ -45,6 +74,19 @@ class ScheduleController extends Controller
         ]);
     }
 
+    /**
+     * <Layer number> (2.0)
+     *
+     * <Processing name> store
+     * <Function> Create a new schedule and auto-generate shifts from active
+     *            shift templates. Validates that the date range doesn't exceed
+     *            31 days and that at least one active template exists. For each
+     *            day in the range, creates shifts for each template (optionally
+     *            filtered by unit if the template has a unit_id).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -102,6 +144,16 @@ class ScheduleController extends Controller
         return redirect()->route('admin.schedules.index')->with('success', 'Schedule created with '.count($rows).' shifts.');
     }
 
+    /**
+     * <Layer number> (3.0)
+     *
+     * <Processing name> show
+     * <Function> Show a specific schedule's details with its shifts and
+     *            assigned nurses.
+     *
+     * @param  \App\Models\Schedule  $schedule
+     * @return \Inertia\Response
+     */
     public function show(Schedule $schedule): Response
     {
         $schedule->load(['shifts.unit', 'shifts.nurses']);
@@ -112,6 +164,16 @@ class ScheduleController extends Controller
         ]);
     }
 
+    /**
+     * <Layer number> (4.0)
+     *
+     * <Processing name> publish
+     * <Function> Publish a draft schedule by changing its status to 'published',
+     *            making it visible to staff in their dashboard.
+     *
+     * @param  \App\Models\Schedule  $schedule
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function publish(Schedule $schedule): RedirectResponse
     {
         $schedule->update(['status' => 'published']);
@@ -119,6 +181,21 @@ class ScheduleController extends Controller
         return back()->with('success', 'Schedule published. Staff can now see their shifts.');
     }
 
+    /**
+     * <Layer number> (5.0)
+     *
+     * <Processing name> assign
+     * <Function> Assign a nurse to a shift with comprehensive conflict
+     *            validation. Checks: (1) nurse is active, (2) nurse is not
+     *            on approved leave that day, (3) nurse is not already assigned
+     *            to this shift, (4) nurse doesn't already have a shift that
+     *            day (one shift per day rule), (5) nurse won't exceed the
+     *            maximum consecutive days (3 days straight).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Shift  $shift
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function assign(Request $request, Shift $shift): RedirectResponse
     {
         $request->validate(['nurse_id' => ['required', 'exists:users,id']]);
@@ -187,6 +264,16 @@ class ScheduleController extends Controller
         return back()->with('success', $nurse->name.' assigned to the shift.');
     }
 
+    /**
+     * <Layer number> (6.0)
+     *
+     * <Processing name> unassign
+     * <Function> Remove a nurse from a shift by detaching the relationship.
+     *
+     * @param  \App\Models\Shift  $shift
+     * @param  \App\Models\User  $nurse
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function unassign(Shift $shift, User $nurse): RedirectResponse
     {
         $shift->nurses()->detach($nurse->id);
@@ -194,6 +281,17 @@ class ScheduleController extends Controller
         return back()->with('success', $nurse->name.' removed from the shift.');
     }
 
+    /**
+     * <Layer number> (7.0)
+     *
+     * <Processing name> findOverlap
+     * <Function> Find any shift on the same day where the given nurse is
+     *            assigned that overlaps in time with the provided shift.
+     *
+     * @param  \App\Models\Shift  $shift
+     * @param  int  $nurseId
+     * @return \App\Models\Shift|null
+     */
     private function findOverlap(Shift $shift, int $nurseId): ?Shift
     {
         $others = Shift::where('date', $shift->date)
@@ -211,6 +309,18 @@ class ScheduleController extends Controller
         return null;
     }
 
+    /**
+     * <Layer number> (8.0)
+     *
+     * <Processing name> overlaps
+     * <Function> Check if two shifts overlap in time. Handles overnight shifts
+     *            by adding 1440 minutes (24 hours) to the end time when it's
+     *            less than the start time.
+     *
+     * @param  \App\Models\Shift  $a
+     * @param  \App\Models\Shift  $b
+     * @return bool
+     */
     private function overlaps(Shift $a, Shift $b): bool
     {
         $aS = $this->toMin($a->start_time);
@@ -224,6 +334,15 @@ class ScheduleController extends Controller
         return $aS < $bE && $bS < $aE;
     }
 
+    /**
+     * <Layer number> (9.0)
+     *
+     * <Processing name> toMin
+     * <Function> Convert a time string (HH:MM) to minutes since midnight.
+     *
+     * @param  string  $t
+     * @return int
+     */
     private function toMin(string $t): int
     {
         [$h, $m] = array_map('intval', explode(':', $t));

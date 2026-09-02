@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\TimeOffController as AdminTimeOffController;
 use App\Http\Controllers\TimeOffController;
+use App\Http\Controllers\NotificationController;
 use App\Models\TimeOffRequest;
 use App\Models\Unit;
 use App\Models\Schedule;
@@ -101,7 +102,11 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/time-off', [TimeOffController::class, 'index'])->name('time-off.index');
     Route::post('/time-off', [TimeOffController::class, 'store'])->name('time-off.store');
+
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.readAll');
 });
+
+
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/nurses', [NurseController::class, 'index'])->name('nurses.index');
